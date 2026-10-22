@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0a051c">
+  <meta name="description" content="AstroSynchro — визуальная концепция знакомства. Исследуйте первый экран и интерактивную сцену приватности.">
+  <title>AstroSynchro — почувствуй притяжение</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="assets/hero-woman.png" as="image">
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#experience">Перейти к истории</a>
+  <header class="header">
+    <a class="wordmark" href="#experience" aria-label="AstroSynchro — в начало">
+      <svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 0 24 16 40 20 24 24 20 40 16 24 0 20 16 16Z" fill="currentColor"/></svg>
+      <span>astro<span class="wordmark__light">synchro</span></span>
+    </a>
+    <button class="menu-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="main-nav" aria-label="Открыть меню"><span></span><span></span></button>
+    <nav class="nav" id="main-nav" aria-label="Основная навигация">
+      <button type="button" data-scroll-top>Притяжение</button>
+      <button type="button" data-scroll-next>Приватность</button>
+      <span class="nav__separator" aria-hidden="true"></span>
+      <span class="beta-label"><i></i>Открытая бета</span>
+    </nav>
+    <button class="header__cta" type="button" data-demo-open>Войти в орбиту <span aria-hidden="true">↗</span></button>
+  </header>
+
+  <main>
+    <section class="story" id="experience" data-story data-scene="intro" aria-label="Интерактивная история знакомства">
+      <div class="story__sticky">
+        <div class="scene-backdrop" aria-hidden="true">
+          <img class="hero-image" src="assets/hero-woman.png" width="1672" height="941" alt="" fetchpriority="high">
+          <div class="scene-backdrop__shade"></div>
+          <div class="scene-backdrop__glow"></div>
+          <div class="grain"></div>
+          <div class="stars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        </div>
+        <div class="orbit orbit--one" aria-hidden="true"></div>
+        <div class="orbit orbit--two" aria-hidden="true"></div>
+        <div class="coordinates" aria-hidden="true"><span>55° 45′ N</span><span>YOUR OWN UNIVERSE</span><span>37° 37′ E</span></div>
+
+        <section class="chapter chapter--intro" data-chapter="intro" aria-labelledby="intro-title">
+          <div class="chapter__copy">
+            <p class="eyebrow"><span class="tiny-star" aria-hidden="true">✦</span> ЗНАКОМСТВА В ТВОЕЙ ВСЕЛЕННОЙ</p>
+            <h1 id="intro-title">Почувствуй<br><em>притяжение.</em></h1>
+            <p class="intro-text">Среди миллионов сигналов<br>есть тот, который почувствуешь ты.</p>
+            <div class="intro-actions">
+              <button class="button button--primary" type="button" data-demo-open>Найти свой сигнал <span aria-hidden="true">↗</span></button>
+              <button class="text-button" type="button" data-scroll-next>Ближе к тебе <span aria-hidden="true">↓</span></button>
+            </div>
+            <p class="beta-note"><span aria-hidden="true">✧</span> Впервые здесь? Присоединяйся к бета-тесту.</p>
+          </div>
+          <div class="signals" aria-label="Исследуйте сигналы знакомства">
+            <button class="signal signal--orbit" data-signal data-title="Иногда достаточно одного взгляда." data-body="У каждой встречи свой ритм. Здесь можно просто быть собой." aria-label="Исследовать сигнал: один взгляд" aria-pressed="false" type="button">
+              <span class="signal__ring" aria-hidden="true"></span><span class="signal__spark" aria-hidden="true">✦</span><span class="signal__caption">поймай сигнал</span>
+            </button>
+            <button class="signal signal--message" data-signal data-title="Разговор, который хочется продолжить." data-body="Голос, улыбка, совпадение настроения — знакомство начинается с малого." aria-label="Исследовать сигнал: разговор" aria-pressed="false" type="button">
+              <span class="signal__dot" aria-hidden="true"></span><span>А если это<br><b>то самое?</b></span><span class="signal__arrow" aria-hidden="true">↗</span>
+            </button>
+          </div>
+          <div class="signal-story" aria-live="polite" aria-atomic="true"><span class="signal-story__line" aria-hidden="true"></span><div><p data-cue-title>Притяжение начинается с тебя.</p><span data-cue-body>Нажми на светящийся сигнал — у каждой встречи своя история.</span></div></div>
+          <div class="hero-footnote"><span>МЕНЬШЕ ОЖИДАНИЙ.<br>БОЛЬШЕ НАСТОЯЩЕГО.</span><span class="hero-footnote__star" aria-hidden="true">✳</span></div>
+        </section>
+
+        <section class="chapter chapter--privacy" id="privacy" data-chapter="privacy" aria-labelledby="privacy-title" aria-hidden="true" inert>
+          <div class="chapter__copy">
+            <p class="eyebrow"><span class="tiny-star" aria-hidden="true">✦</span> ПРОСТРАНСТВО ДОВЕРИЯ</p>
+            <h2 id="privacy-title">Личное —<br><em>это личное.</em></h2>
+            <p class="intro-text">Можно открыться человеку.<br>И оставить остальное между вами.</p>
+            <p class="privacy-caption">Исчезающие сообщения — одна из идей приложения.<br>Попробуй, как это может выглядеть.</p>
+          </div>
+          <div class="privacy-demo">
+            <div class="privacy-demo__orbit" aria-hidden="true"></div>
+            <div class="chat-window">
+              <div class="chat-window__header"><div class="chat-avatar" aria-hidden="true">✧</div><div><b>Твой человек</b><span>в вашей маленькой вселенной</span></div><svg viewBox="0 0 24 24" aria-label="Приватный разговор" role="img"><rect x="6" y="10" width="12" height="10" rx="3"/><path d="M9 10V7a3 3 0 0 1 6 0v3"/></svg></div>
+              <div class="chat-window__body"><span class="chat-day">Сегодня, где-то во Вселенной</span><div class="chat-message" data-message><span>Кажется, мы на одной волне.</span><small>23:47 <span aria-hidden="true">✓✓</span></small></div><div class="chat-answer">Мне тоже так кажется. <span aria-hidden="true">✦</span></div></div>
+              <div class="chat-window__footer"><span class="hourglass" aria-hidden="true">⌛</span><span>У каждой истории есть своё время</span><b>24 ч</b></div>
+            </div>
+            <div class="demo-controls"><button class="text-button" type="button" data-message-delete>Отпустить сообщение <span aria-hidden="true">↗</span></button><p data-message-status aria-live="polite">Нажми, чтобы увидеть исчезновение.</p></div>
+          </div>
+          <div class="privacy-footnote"><span>ТВОЯ ИСТОРИЯ.<br>ТВОИ ГРАНИЦЫ.</span><span>Визуальная демонстрация функции</span></div>
+        </section>
+
+        <div class="scene-footer"><button class="scroll-hint" type="button" data-scroll-next data-scroll-continue><span class="scroll-hint__mouse" aria-hidden="true"><i></i></span><span>Листай. Почувствуй историю.</span></button><div class="chapter-indicator"><span data-progress-label>01 / 02</span><span class="chapter-indicator__track"><i></i></span></div><span class="age-mark">18+</span></div>
+      </div>
+    </section>
+
+    <section class="afterword" aria-labelledby="afterword-title">
+      <p class="eyebrow" data-reveal><span class="tiny-star" aria-hidden="true">✦</span> НАЧАЛО ЧЕГО-ТО ВАЖНОГО</p>
+      <h2 id="afterword-title" data-reveal>У каждой встречи<br>есть <em>своя орбита.</em></h2>
+      <button class="button button--primary" type="button" data-demo-open data-reveal>Хочу попробовать <span aria-hidden="true">↗</span></button>
+      <footer class="footer"><a class="wordmark" href="#experience">astro<span class="wordmark__light">synchro</span></a><p>Визуальная концепция · Название и тексты временные</p><button class="text-button" type="button" data-scroll-top>К началу <span aria-hidden="true">↑</span></button></footer>
+    </section>
+  </main>
+
+  <dialog class="beta-dialog" id="beta-dialog" aria-labelledby="dialog-title" aria-describedby="dialog-description"><button class="dialog-close" type="button" data-demo-close aria-label="Закрыть">×</button><span class="dialog-star" aria-hidden="true">✦</span><p class="eyebrow">ВИЗУАЛЬНАЯ КОНЦЕПЦИЯ</p><h2 id="dialog-title">Первый шаг<br>к своей <em>орбите.</em></h2><p id="dialog-description">Здесь появится переход к приложению или приглашение в бета-тест. Сейчас это прототип: он показывает оформление и взаимодействия.</p><button class="button button--primary" type="button" data-demo-close>Продолжить исследование <span aria-hidden="true">↗</span></button></dialog>
+</body>
+</html>
