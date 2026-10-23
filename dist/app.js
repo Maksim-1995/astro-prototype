@@ -4,13 +4,20 @@
   const body = document.body;
   const story = document.querySelector('[data-story]');
   const stickyScene = story?.querySelector('.story__sticky');
+  const viewportProbe = document.querySelector('[data-viewport-probe]');
   const dialog = document.querySelector('#beta-dialog');
   const progressLabel = document.querySelector('[data-progress-label]');
   const chapters = story ? [...story.querySelectorAll('[data-chapter]')] : [];
   const privacyChapter = story?.querySelector('[data-chapter="privacy"]');
   const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)');
   const clamp = (value, min = 0, max = 1) => Math.min(max, Math.max(min, value));
-  const usesStaticFlow = () => motionPreference.matches || window.innerHeight < 700;
+  const smoothstep = (start, end, value) => {
+    const position = clamp((value - start) / (end - start));
+    return position * position * (3 - 2 * position);
+  };
+  const stableViewportHeight = () => viewportProbe?.getBoundingClientRect().height
+    || window.innerHeight;
+  const usesStaticFlow = () => motionPreference.matches || stableViewportHeight() < 700;
   let scheduledFrame = 0;
   let pointerX = 0;
   let pointerY = 0;
@@ -19,23 +26,37 @@
     scheduledFrame = 0;
     if (!story) return;
 
+    const staticFlow = usesStaticFlow();
+    story.classList.toggle('is-static-flow', staticFlow);
     const rect = story.getBoundingClientRect();
     const stickyHeight = stickyScene?.getBoundingClientRect().height || window.innerHeight;
     const scrollDistance = Math.max(story.offsetHeight - stickyHeight, 1);
     const progress = clamp(-rect.top / scrollDistance);
     const sceneProgress = clamp((progress - 0.2) / 0.65);
+    const approach = smoothstep(0.10, 0.55, progress);
+    const departure = smoothstep(0.22, 0.60, progress);
+    const privacyEnter = smoothstep(0.50, 0.82, progress);
+    const portalProgress = smoothstep(0.24, 0.80, progress);
+    const portalVisibility = smoothstep(0.22, 0.45, progress)
+      * (1 - smoothstep(0.74, 0.95, progress));
 
-    const staticFlow = usesStaticFlow();
     const privacyInView = privacyChapter
-      && privacyChapter.getBoundingClientRect().top <= window.innerHeight * 0.5;
+      && privacyChapter.getBoundingClientRect().top <= stableViewportHeight() * 0.5;
     const currentScene = staticFlow
       ? (privacyInView ? 'privacy' : 'intro')
-      : (sceneProgress >= 0.5 ? 'privacy' : 'intro');
+      : (progress >= 0.58 ? 'privacy' : 'intro');
     story.dataset.scene = currentScene;
     story.style.setProperty('--progress', staticFlow ? '0' : progress.toFixed(4));
     story.style.setProperty('--scene-progress', staticFlow ? '0' : sceneProgress.toFixed(4));
-    story.style.setProperty('--pointer-x', motionPreference.matches ? '0' : pointerX.toFixed(4));
-    story.style.setProperty('--pointer-y', motionPreference.matches ? '0' : pointerY.toFixed(4));
+    story.style.setProperty('--approach', staticFlow ? '0' : approach.toFixed(4));
+    story.style.setProperty('--departure', staticFlow ? '0' : departure.toFixed(4));
+    story.style.setProperty('--privacy-enter', staticFlow ? '0' : privacyEnter.toFixed(4));
+    story.style.setProperty('--portal-progress', staticFlow ? '0' : portalProgress.toFixed(4));
+    story.style.setProperty('--portal-visibility', staticFlow ? '0' : portalVisibility.toFixed(4));
+    story.style.setProperty('--hero-opacity', staticFlow ? '1' : (1 - 0.82 * departure).toFixed(4));
+    story.style.setProperty('--intro-opacity', staticFlow ? '1' : (1 - departure).toFixed(4));
+    story.style.setProperty('--pointer-x', staticFlow ? '0' : pointerX.toFixed(4));
+    story.style.setProperty('--pointer-y', staticFlow ? '0' : pointerY.toFixed(4));
 
     // Both scenes remain available in the normal document flow when motion is
     // reduced or the viewport is short. Off-stage scenes do not receive focus.
@@ -133,7 +154,7 @@
       const storyTop = window.scrollY + story.getBoundingClientRect().top;
       const stickyHeight = stickyScene?.getBoundingClientRect().height || window.innerHeight;
       const scrollDistance = Math.max(story.offsetHeight - stickyHeight, 0);
-      scrollToPosition(storyTop + scrollDistance * 0.7);
+      scrollToPosition(storyTop + scrollDistance * 0.9);
     });
   });
 
@@ -153,6 +174,7 @@
   };
 
   function selectSignal(selectedSignal) {
+    if (story) story.dataset.signalActive = String(Boolean(selectedSignal));
     signals.forEach((signal) => {
       const active = signal === selectedSignal;
       signal.setAttribute('aria-pressed', String(active));
