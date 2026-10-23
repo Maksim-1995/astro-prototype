@@ -1,0 +1,95 @@
+name: astro-prototype
+
+x-backend: &backend
+  build:
+    context: ./backend
+    target: production
+  env_file: .env
+  environment:
+    DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?Set DJANGO_SECRET_KEY in .env}
+    DB_NAME: ${DB_NAME:-astro}
+    DB_USER: ${DB_USER:-astro}
+    DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+    DB_HOST: db
+    DB_PORT: "5432"
+
+services:
+  db:
+    image: postgres:18
+    environment:
+      POSTGRES_DB: ${DB_NAME:-astro}
+      POSTGRES_USER: ${DB_USER:-astro}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    restart: unless-stopped
+
+  init:
+    <<: *backend
+    command: ["sh", "-c", "python manage.py migrate --noinput && python manage.py collectstatic --noinput"]
+    volumes:
+      - django_static:/app/staticfiles
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  backend:
+    <<: *backend
+    expose:
+      - "8000"
+    volumes:
+      - django_static:/app/staticfiles:ro
+    depends_on:
+      db:
+        condition: service_healthy
+      init:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; request = urllib.request.Request('http://127.0.0.1:8000/api/v1/health/', headers={'Host': 'localhost', 'X-Forwarded-Proto': 'https'}); urllib.request.urlopen(request, timeout=5).read()"
+      interval: 20s
+      timeout: 8s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:stable-alpine
+    environment:
+      PUBLIC_PRIVACY_POLICY_URL: ${PUBLIC_PRIVACY_POLICY_URL:-}
+    ports:
+      - "${HTTP_BIND:-127.0.0.1}:${HTTP_PORT:-8080}:80"
+    volumes:
+      - ./dist:/usr/share/nginx/html:ro
+      - ./deploy/nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - ./deploy/40-frontend-config.sh:/docker-entrypoint.d/40-frontend-config.sh:ro
+      - django_static:/srv/django-static:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+  tests:
+    <<: *backend
+    profiles: [test]
+    build:
+      context: ./backend
+      target: test
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+volumes:
+  postgres_data:
+  django_static:

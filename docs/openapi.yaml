@@ -1,0 +1,193 @@
+openapi: 3.1.0
+info:
+  title: AstroSynchro Beta Signup API
+  version: 1.0.0
+  description: >-
+    Сбор заявок на приглашение в бета-тест приложения. Заявка не создаёт аккаунт,
+    не подтверждает владение email и не отправляет письмо автоматически.
+    Публичного API для чтения, редактирования или выгрузки заявок нет.
+    Доступ сотрудников к заявкам осуществляется через Django Admin /admin/
+    с авторизацией по сессии и проверкой прав пользователя.
+servers:
+  - url: /
+    description: Тот же origin, что и сайт; /api/ проксируется на Django.
+tags:
+  - name: Beta signups
+  - name: Operations
+paths:
+  /api/v1/beta-signups/:
+    post:
+      operationId: requestBetaInvitation
+      summary: Оставить заявку на приглашение в бета-тест
+      tags: [Beta signups]
+      security: []
+      description: >-
+        Принимает только JSON. Email очищается от пробелов по краям и приводится
+        к нижнему регистру. Обязательное consent должно быть именно JSON true;
+        строки и числа не принимаются. Время согласия и версия политики
+        записываются сервером. Повторная заявка сохраняет исходные сведения
+        и статус. Ответ 202 одинаков для новой заявки, дубликата и заполненного
+        поля website, чтобы не раскрывать наличие email в базе. Заполненное
+        website считается honeypot: заявка не сохраняется. Неизвестные поля
+        запроса игнорируются и не позволяют назначить статус или время согласия.
+        Лимиты действуют по IP: 5 запросов в минуту и 30 запросов в сутки;
+        повторные заявки и honeypot тоже учитываются. Приём закрыт, пока
+        PUBLIC_SIGNUPS_ENABLED=false или не задана PRIVACY_POLICY_VERSION.
+        Backend доступен только через доверенный Nginx, который перезаписывает
+        X-Forwarded-For адресом соединения. Django настроен на один proxy;
+        прямой доступ к backend или добавление proxy без перенастройки меняет
+        границу доверия и может позволить подмену IP для обхода лимитов.
+        Для отдельного frontend origin необходим точный CORS_ALLOWED_ORIGINS;
+        cookie не используются, Retry-After разрешён для чтения из браузера.
+        GET, HEAD, PUT, PATCH и DELETE отвечают 405; OPTIONS поддерживается.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BetaSignupRequest'
+            example:
+              email: stargazer@example.com
+              consent: true
+              website: ''
+      responses:
+        '202':
+          description: >-
+            Заявка обработана; ответ не подтверждает существование записи,
+            владение адресом или отправку приглашения.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AcceptedResponse'
+              example:
+                detail: Заявка принята. Если вы ещё не в списке, мы добавим ваш email.
+        '400':
+          description: >-
+            Неверный JSON, некорректный или отсутствующий email, отсутствие
+            явного согласия либо некорректное поле website. Заявка не сохранена.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ValidationErrors'
+                  - $ref: '#/components/schemas/DetailResponse'
+              examples:
+                missingConsent:
+                  value:
+                    consent: [Обязательное поле.]
+                invalidEmail:
+                  value:
+                    email: [Введите правильный адрес электронной почты.]
+        '405':
+          description: HTTP-метод не поддерживается; публичного списка заявок нет.
+          headers:
+            Allow:
+              schema:
+                type: string
+              example: POST, OPTIONS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailResponse'
+        '415':
+          description: Content-Type запроса должен быть application/json.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailResponse'
+        '429':
+          description: Превышен минутный или суточный лимит запросов по IP.
+          headers:
+            Retry-After:
+              description: Количество секунд до следующей допустимой попытки.
+              schema:
+                type: integer
+                minimum: 1
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailResponse'
+        '503':
+          description: Приём заявок ещё не открыт; данные не сохраняются.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailResponse'
+              example:
+                detail: Приём заявок пока не открыт.
+  /api/v1/health/:
+    get:
+      operationId: checkHealth
+      summary: Проверить доступность API и базы данных
+      tags: [Operations]
+      security: []
+      description: >-
+        Проверяет соединение с базой запросом SELECT 1. Не возвращает адреса,
+        учётные данные, тексты исключений или сведения о заявках.
+      responses:
+        '200':
+          description: API и база данных доступны.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                additionalProperties: false
+                properties:
+                  status:
+                    type: string
+                    const: ok
+        '503':
+          description: База данных недоступна.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                additionalProperties: false
+                properties:
+                  status:
+                    type: string
+                    const: unavailable
+components:
+  schemas:
+    BetaSignupRequest:
+      type: object
+      required: [email, consent]
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 254
+          description: Адрес для будущего приглашения в бета-тест.
+        consent:
+          type: boolean
+          const: true
+          description: Явное согласие с опубликованной политикой обработки данных.
+        website:
+          type: string
+          maxLength: 200
+          default: ''
+          writeOnly: true
+          description: Скрытое honeypot-поле. Обычный посетитель оставляет его пустым.
+    AcceptedResponse:
+      type: object
+      required: [detail]
+      additionalProperties: false
+      properties:
+        detail:
+          type: string
+          const: Заявка принята. Если вы ещё не в списке, мы добавим ваш email.
+    DetailResponse:
+      type: object
+      required: [detail]
+      properties:
+        detail:
+          type: string
+    ValidationErrors:
+      type: object
+      minProperties: 1
+      additionalProperties:
+        type: array
+        items:
+          type: string
