@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: AstroSynchro Beta Signup API
+  title: Неслучайно Beta Signup API
   version: 1.0.0
   description: >-
     Сбор заявок на приглашение в бета-тест приложения. Заявка не создаёт аккаунт,
