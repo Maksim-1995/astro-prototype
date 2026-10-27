@@ -1,4 +1,4 @@
-"""Environment-based settings. PostgreSQL is used in development and tests too."""
+"""Настройки из окружения с PostgreSQL для разработки и тестов."""
 
 import os
 from pathlib import Path
@@ -9,6 +9,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 def env_bool(name, default=False):
+    """Читает логическую настройку и отклоняет неизвестные значения."""
     value = os.environ.get(name, str(default)).strip().lower()
     if value not in {"true", "false", "1", "0"}:
         raise ImproperlyConfigured(f"{name} must be true, false, 1 or 0.")
@@ -16,7 +17,12 @@ def env_bool(name, default=False):
 
 
 def env_list(name, default=""):
-    return [value.strip() for value in os.environ.get(name, default).split(",") if value.strip()]
+    """Читает список через запятую, убирая пустые элементы."""
+    return [
+        value.strip()
+        for value in os.environ.get(name, default).split(",")
+        if value.strip()
+    ]
 
 
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "")
@@ -77,7 +83,7 @@ DATABASES = {
     }
 }
 
-# One shared table for every Gunicorn process; created by migration 0002.
+# Общая таблица кеша для всех процессов; создаётся миграцией 0002.
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.db.DatabaseCache",
@@ -92,9 +98,12 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAdminUser"],
     "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"],
     "DEFAULT_PARSER_CLASSES": ["rest_framework.parsers.JSONParser"],
-    "DEFAULT_THROTTLE_RATES": {"beta_signup_burst": "5/min", "beta_signup_daily": "30/day"},
-    # The app must be reachable only through one trusted reverse proxy.
-    # Nginx overwrites X-Forwarded-For rather than appending client-supplied values.
+    "DEFAULT_THROTTLE_RATES": {
+        "beta_signup_burst": "5/min",
+        "beta_signup_daily": "30/day",
+    },
+    # Приложение доступно только через один доверенный обратный прокси.
+    # Nginx заменяет X-Forwarded-For адресом клиента.
     "NUM_PROXIES": 1,
 }
 
@@ -108,10 +117,23 @@ PUBLIC_SIGNUPS_ENABLED = env_bool("PUBLIC_SIGNUPS_ENABLED")
 PRIVACY_POLICY_VERSION = os.environ.get("PRIVACY_POLICY_VERSION", "").strip()
 
 AUTH_PASSWORD_VALIDATORS = [
-    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
+    {
+        "NAME": (
+            "django.contrib.auth.password_validation."
+            "UserAttributeSimilarityValidator"
+        )
+    },
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
-    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
-    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
+    {
+        "NAME": (
+            "django.contrib.auth.password_validation.CommonPasswordValidator"
+        )
+    },
+    {
+        "NAME": (
+            "django.contrib.auth.password_validation.NumericPasswordValidator"
+        )
+    },
 ]
 LANGUAGE_CODE = "ru-ru"
 TIME_ZONE = "UTC"

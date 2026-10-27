@@ -1,8 +1,12 @@
+"""Создаёт таблицу заявок с уникальностью email без учёта регистра."""
+
 import django.db.models.functions.text
 from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
+    """Описывает первоначальную схему хранения заявок и согласий."""
+
     initial = True
     dependencies = []
     operations = [
@@ -12,10 +16,16 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.BigAutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
                     ),
                 ),
-                ("email", models.EmailField(max_length=254, verbose_name="Email")),
+                (
+                    "email",
+                    models.EmailField(max_length=254, verbose_name="Email"),
+                ),
                 (
                     "status",
                     models.CharField(
@@ -29,15 +39,24 @@ class Migration(migrations.Migration):
                         verbose_name="Статус",
                     ),
                 ),
-                ("created_at", models.DateTimeField(auto_now_add=True, verbose_name="Дата заявки")),
+                (
+                    "created_at",
+                    models.DateTimeField(
+                        auto_now_add=True, verbose_name="Дата заявки"
+                    ),
+                ),
                 (
                     "consented_at",
-                    models.DateTimeField(editable=False, verbose_name="Дата согласия"),
+                    models.DateTimeField(
+                        editable=False, verbose_name="Дата согласия"
+                    ),
                 ),
                 (
                     "privacy_policy_version",
                     models.CharField(
-                        editable=False, max_length=100, verbose_name="Версия политики"
+                        editable=False,
+                        max_length=100,
+                        verbose_name="Версия политики",
                     ),
                 ),
             ],

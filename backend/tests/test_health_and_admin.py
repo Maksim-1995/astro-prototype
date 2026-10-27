@@ -1,24 +1,33 @@
+"""Проверки состояния сервиса и прав доступа к админке заявок."""
+
 import pytest
+from beta.models import BetaSignup
+from beta.services import register_signup
 from django.contrib.auth.models import Permission
 from django.db import OperationalError, connection
 from django.test import Client
-
-from beta.models import BetaSignup
-from beta.services import register_signup
 
 pytestmark = pytest.mark.django_db
 
 
 def test_health_checks_database_without_authentication(api_client):
+    """Проверить доступность базы через публичный адрес состояния."""
     response = api_client.get("/api/v1/health/")
 
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
 
 
-def test_health_does_not_disclose_database_error_details(api_client, monkeypatch):
+def test_health_does_not_disclose_database_error_details(
+    api_client, monkeypatch
+):
+    """Скрыть тип ошибки и параметры подключения к базе."""
+
     def database_unavailable(*args, **kwargs):
-        raise OperationalError("database password=do-not-disclose host=private-db")
+        """Выдать ошибку базы с чувствительными деталями."""
+        raise OperationalError(
+            "database password=do-not-disclose host=private-db"
+        )
 
     monkeypatch.setattr(connection, "cursor", database_unavailable)
 
@@ -31,6 +40,7 @@ def test_health_does_not_disclose_database_error_details(api_client, monkeypatch
 
 
 def test_anonymous_cannot_access_admin(client):
+    """Перенаправить анонимного посетителя админки на страницу входа."""
     response = client.get("/admin/beta/betasignup/")
 
     assert response.status_code == 302
@@ -38,6 +48,7 @@ def test_anonymous_cannot_access_admin(client):
 
 
 def test_non_staff_cannot_access_admin(client, django_user_model):
+    """Не пускать в админку пользователя без признака сотрудника."""
     user = django_user_model.objects.create_user(
         username="ordinary-user", password="test-password"
     )
@@ -50,8 +61,11 @@ def test_non_staff_cannot_access_admin(client, django_user_model):
 
 
 def test_authorized_admin_can_view_signup_list(client, django_user_model):
+    """Разрешить суперпользователю просмотр списка заявок."""
     admin = django_user_model.objects.create_superuser(
-        username="signup-admin", password="test-password", email="admin@example.com"
+        username="signup-admin",
+        password="test-password",
+        email="admin@example.com",
     )
     client.force_login(admin)
 
@@ -60,7 +74,10 @@ def test_authorized_admin_can_view_signup_list(client, django_user_model):
     assert response.status_code == 200
 
 
-def test_staff_without_model_permission_cannot_view_signups(client, django_user_model):
+def test_staff_without_model_permission_cannot_view_signups(
+    client, django_user_model
+):
+    """Запретить просмотр заявок сотруднику без права на модель."""
     staff = django_user_model.objects.create_user(
         username="unprivileged-staff", password="test-password", is_staff=True
     )
@@ -71,12 +88,17 @@ def test_staff_without_model_permission_cannot_view_signups(client, django_user_
     assert response.status_code == 403
 
 
-def test_staff_with_view_permission_can_view_signups(client, django_user_model):
+def test_staff_with_view_permission_can_view_signups(
+    client, django_user_model
+):
+    """Разрешить сотруднику просмотр при наличии права на модель."""
     staff = django_user_model.objects.create_user(
         username="signup-reviewer", password="test-password", is_staff=True
     )
     staff.user_permissions.add(
-        Permission.objects.get(codename="view_betasignup", content_type__app_label="beta")
+        Permission.objects.get(
+            codename="view_betasignup", content_type__app_label="beta"
+        )
     )
     client.force_login(staff)
 
@@ -88,8 +110,11 @@ def test_staff_with_view_permission_can_view_signups(client, django_user_model):
 def test_admin_can_change_status_but_cannot_rewrite_original_signup(
     client, django_user_model
 ):
+    """Разрешить смену статуса, сохранив исходные данные и согласие."""
     admin = django_user_model.objects.create_superuser(
-        username="signup-editor", password="test-password", email="admin@example.com"
+        username="signup-editor",
+        password="test-password",
+        email="admin@example.com",
     )
     client.force_login(admin)
     register_signup(email="stargazer@example.com")
@@ -120,9 +145,14 @@ def test_admin_can_change_status_but_cannot_rewrite_original_signup(
     assert signup.privacy_policy_version == "test-v1"
 
 
-def test_admin_change_requires_csrf_even_for_authenticated_superuser(django_user_model):
+def test_admin_change_requires_csrf_even_for_authenticated_superuser(
+    django_user_model,
+):
+    """Отклонить запрос суперпользователя к админке без CSRF."""
     admin = django_user_model.objects.create_superuser(
-        username="csrf-admin", password="test-password", email="admin@example.com"
+        username="csrf-admin",
+        password="test-password",
+        email="admin@example.com",
     )
     client = Client(enforce_csrf_checks=True)
     client.force_login(admin)
@@ -130,7 +160,8 @@ def test_admin_change_requires_csrf_even_for_authenticated_superuser(django_user
     signup = BetaSignup.objects.get()
 
     response = client.post(
-        f"/admin/beta/betasignup/{signup.pk}/change/", {"status": "invited", "_save": "Save"}
+        f"/admin/beta/betasignup/{signup.pk}/change/",
+        {"status": "invited", "_save": "Save"},
     )
 
     assert response.status_code == 403

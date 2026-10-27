@@ -1,3 +1,5 @@
+"""Маршруты публичной заявки и проверки доступности API."""
+
 from django.urls import path
 
 from .views import BetaSignupView, HealthView

@@ -1,3 +1,5 @@
+"""Основные маршруты административной панели и API версии v1."""
+
 from django.contrib import admin
 from django.urls import include, path
 
