@@ -115,6 +115,10 @@ CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS")
 
 PUBLIC_SIGNUPS_ENABLED = env_bool("PUBLIC_SIGNUPS_ENABLED")
 PRIVACY_POLICY_VERSION = os.environ.get("PRIVACY_POLICY_VERSION", "").strip()
+if len(PRIVACY_POLICY_VERSION) > 100:
+    raise ImproperlyConfigured(
+        "PRIVACY_POLICY_VERSION must be at most 100 characters."
+    )
 
 AUTH_PASSWORD_VALIDATORS = [
     {

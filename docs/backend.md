@@ -67,7 +67,8 @@ python3 -c 'import secrets; print(secrets.token_urlsafe(32))'
 - `DJANGO_COOKIE_SECURE`, `DJANGO_SECURE_SSL_REDIRECT`, `DJANGO_HSTS_SECONDS`
   управляют HTTPS. В шаблоне для локального HTTP: `False`, `False`, `0`.
 - `PUBLIC_SIGNUPS_ENABLED=False` выключает приём. Для включения также нужна
-  непустая `PRIVACY_POLICY_VERSION`. Версия задаётся только сервером.
+  непустая `PRIVACY_POLICY_VERSION` длиной до 100 символов. Версия задаётся
+  только сервером; слишком длинное значение останавливает запуск Django.
 - `PUBLIC_PRIVACY_POLICY_URL` использует startup-скрипт Nginx для генерации
   frontend-конфигурации. В native-режиме одна эта переменная не изменяет
   `dist/config.js`.
@@ -190,12 +191,14 @@ Nginx отдаёт `/static/` из отдельного тома, frontend — �
 docker compose build backend init
 docker compose run --rm init
 docker compose up -d backend nginx
-docker compose restart nginx
 ```
 
-Последний шаг нужен потому, что текущая конфигурация Nginx разрешает адрес
-`backend` при запуске. После пересоздания backend его IP может измениться;
-перезапуск Nginx обновляет адрес upstream.
+Nginx разрешает адрес `backend` через встроенный DNS Docker
+(`127.0.0.11`) с кешированием на 5 секунд. После смены IP контейнера
+адрес обновляется автоматически; отдельный перезапуск Nginx не нужен.
+Во время перезапуска backend и до обновления DNS возможны краткие ошибки
+502. При первом применении изменённого шаблона выполните
+`docker compose restart nginx`, чтобы Nginx загрузил новую конфигурацию.
 
 ## Включение приёма заявок
 
@@ -211,7 +214,6 @@ docker compose restart nginx
 
 ```bash
 docker compose up -d --force-recreate backend nginx
-docker compose restart nginx
 ```
 
 При запуске Nginx генерирует `/config.js` с `apiBaseUrl: ""` и ссылкой
